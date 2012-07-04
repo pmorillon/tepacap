@@ -84,7 +84,7 @@ module Capistrano
             end
           end
 
-          threadpool.shutdown
+          threadpool.join
 
           # Clean all ssh connections
           servers_names.each do |server|
