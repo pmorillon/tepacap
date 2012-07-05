@@ -11,7 +11,6 @@ module Capistrano
           if tree.branches.empty? && tree.fallback
             logger.debug "executing #{tree.fallback}"
           elsif tree.branches.any?
-            logger.debug "dkjhjk dkj"
             tree.each do |branch|
               logger.trace "-> #{branch}"
             end
