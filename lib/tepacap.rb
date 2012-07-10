@@ -44,9 +44,9 @@ module Capistrano
           # Due to a bug in the ruby net-ssh-* libraries, we need to recreate a gateway and all previous ssh connections
           # when a ssh connection fails.
           until all_connected
-            gateway_user = exists?(:gateway_user) ? fetch(:gateway_user) : fetch(:user)
             if exists?(:gateway)
-              gateway = Net::SSH::Gateway.new(fetch(:gateway), gateway_user)
+              user, host, port = fetch(:gateway).match(/^(?:([^;,:=]+)@|)(.*?)(?::(\d+)|)$/)[1,3]
+              gateway = Net::SSH::Gateway.new(host, user, :port => port)
             end
             begin
               servers_names.each do |server|
