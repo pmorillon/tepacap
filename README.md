@@ -13,12 +13,11 @@ Add this into your Capfile :
 
     require "tepacap"
 
-You can have a different user for gateway and servers :
+## Limitations
 
-    set :user, "user_for_servers" # default user for servers and gateway
+Multiple gateways are not allowed, use only one like bellow (bypass this limitation by editing your _~/.ssh/config_ file and usage of _ProxyCommand_ and _netcat_).
 
-    set :gateway, "your_gateway_server"
-    set :gateway_user, "user_for_gateway"
+    set :gateway, "user@your_gateway_server:port"
 
 ## Result
 
