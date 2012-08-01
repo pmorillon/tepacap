@@ -9,6 +9,10 @@ Add following features :
 
 ## Usage
 
+Add this into your Gemfile :
+
+    gem "tepacap", :git => "git://github.com/pmorillon/tepacap.git"
+
 Add this into your Capfile :
 
     require "tepacap"
