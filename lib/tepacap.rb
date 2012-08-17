@@ -32,6 +32,12 @@ module Capistrano
           servers = find_servers_for_task(current_task, options)
           servers_names = servers.map { |x| x.host }
 
+          if exists?(:ssh_config)
+            ssh_config = fetch(:ssh_config)
+          else
+            ssh_config = true
+          end
+
           logs = Hash.new { |h,k| h[k] = '' }
           errors = Hash.new { |h,k| h[k] = '' }
           ssh_session = {}
@@ -46,16 +52,16 @@ module Capistrano
           until all_connected
             if exists?(:gateway)
               user, host, port = fetch(:gateway).match(/^(?:([^;,:=]+)@|)(.*?)(?::(\d+)|)$/)[1,3]
-              gateway = Net::SSH::Gateway.new(host, user, :port => port)
+              gateway = Net::SSH::Gateway.new(host, user, :port => port, :config => ssh_config)
             end
             begin
               servers_names.each do |server|
                 timeout(5) do
                   current_server = server
                   if exists?(:gateway)
-                    ssh_session[server] = gateway.ssh(server, fetch(:user))
+                    ssh_session[server] = gateway.ssh(server, fetch(:user), :config => ssh_config)
                   else
-                    ssh_session[server] = Net::SSH.start(server, fetch(:user), :config => true)
+                    ssh_session[server] = Net::SSH.start(server, fetch(:user), :config => ssh_config)
                   end
                   logger.debug "Connected to #{server}..."
                 end
