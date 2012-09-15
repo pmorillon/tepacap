@@ -45,33 +45,39 @@ module Capistrano
           current_server = ""
           all_connected = false
           failed_servers = []
+          failure = false
 
           # Ensure that all server are reacheable and establish a ssh connection.
           # Due to a bug in the ruby net-ssh-* libraries, we need to recreate a gateway and all previous ssh connections
           # when a ssh connection fails.
           until all_connected
+            failure = false
             if exists?(:gateway)
               user, host, port = fetch(:gateway).match(/^(?:([^;,:=]+)@|)(.*?)(?::(\d+)|)$/)[1,3]
               gateway = Net::SSH::Gateway.new(host, user, :port => port, :config => ssh_config)
             end
-            begin
               servers_names.each do |server|
-                timeout(5) do
-                  current_server = server
-                  if exists?(:gateway)
-                    ssh_session[server] = gateway.ssh(server, fetch(:user), :config => ssh_config)
-                  else
-                    ssh_session[server] = Net::SSH.start(server, fetch(:user), :config => ssh_config)
+                threadpool.execute do
+                  begin
+                    timeout(5) do
+                      current_server = server
+                      if exists?(:gateway)
+                        ssh_session[server] = gateway.ssh(server, fetch(:user), :config => ssh_config)
+                      else
+                        ssh_session[server] = Net::SSH.start(server, fetch(:user), :config => ssh_config)
+                      end
+                      logger.debug "Connected to #{server}..."
+                    end
+                  rescue Timeout::Error, Net::SSH::Disconnect, Exception => e
+                    logger.debug Term::ANSIColor.red("Removing #{server} (#{e.message})...")
+                    servers_names.delete server
+                    failed_servers << server
+                    failure = true if exists?(:gateway)
                   end
-                  logger.debug "Connected to #{server}..."
                 end
               end
-              all_connected = true
-            rescue Timeout::Error, Net::SSH::Disconnect, Exception => e
-              logger.debug Term::ANSIColor.red("Removing #{current_server} (#{e.message})...")
-              servers_names.delete current_server
-              failed_servers << current_server
-            end
+              threadpool.join
+              all_connected = true if failure == false
           end
 
           # Execute command in parallel
